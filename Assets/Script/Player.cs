@@ -1,84 +1,150 @@
 using System.Collections;
 using System.Collections.Generic;
-
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    // Start is called before the first frame update
     public Animator animator;
     public Rigidbody2D rb;
+
     private float jumpHeight = 8f;
-    private bool isGround = true;
-    private float movement;
     private float moveSpeed = 5f;
     private bool facingRight = true;
-    
+    private bool isGround = true;
+    private Vector2 moveInput;
 
-    void Start()
+    private PlayerController inputActions;
+
+    private void OnEnable()
     {
-        
+        // Inisialisasi inputActions jika belum
+        if (inputActions == null)
+        {
+            inputActions = new PlayerController();
+
+            // Tambahkan event handler hanya sekali
+            inputActions.Movement.Move.performed += OnMove;
+            inputActions.Movement.Move.canceled += OnMoveCanceled;
+            inputActions.Movement.Jump.performed += OnJump;
+        }
+
+        inputActions.Enable();
     }
 
-    // Update is called once per frame
+    private void OnDisable()
+    {
+        if (inputActions != null)
+        {
+            inputActions.Disable();
+        }
+    }
+
     void Update()
     {
-        movement = Input.GetAxis("Horizontal");
-        if(movement < 0f && facingRight)
+        // Flip karakter
+        if (moveInput.x < 0f && facingRight)
         {
             transform.eulerAngles = new Vector3(0f, -180f, 0f);
-            facingRight= false;
-        }else if(movement >0f && facingRight == false)
+            facingRight = false;
+        }
+        else if (moveInput.x > 0f && !facingRight)
         {
             transform.eulerAngles = new Vector3(0f, 0f, 0f);
             facingRight = true;
         }
-         
-        if (Input.GetKey(KeyCode.Space) && isGround)
-        {
-            Jump();
-            isGround = false;
-            animator.SetBool("Jump", true);
-        }
 
-        if(Mathf.Abs(movement) > 0f)
+        // Animasi lari
+        animator.SetFloat("Run", Mathf.Abs(moveInput.x));
+
+        // Serangan (keyboard)
+        if (Keyboard.current.rKey.isPressed)
         {
-            animator.SetFloat("Run",1f);
-        }else if( movement < .1f)
-        {
-            animator.SetFloat("Run", 0f);
-        }
-        if (Input.GetKey(KeyCode.R)){
             animator.SetTrigger("Attack_1");
         }
-        if (Input.GetKey(KeyCode.T))
+        if (Keyboard.current.tKey.isPressed)
         {
             animator.SetTrigger("Attack_2");
         }
-        if (Input.GetKey(KeyCode.Y))
+        if (Keyboard.current.yKey.isPressed)
         {
-            animator.SetTrigger("Attack_1");
+            animator.SetTrigger("Attack_3");
         }
-
     }
+
     private void FixedUpdate()
     {
-        transform.position += new Vector3(movement, 0f, 0f) * Time.fixedDeltaTime * moveSpeed;
+        transform.position += new Vector3(moveInput.x, 0f, 0f) * Time.fixedDeltaTime * moveSpeed;
     }
 
-     void Jump()
+    void Jump()
     {
         rb.AddForce(new Vector2(0f, jumpHeight), ForceMode2D.Impulse);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "Ground")
+        if (collision.gameObject.CompareTag("Ground"))
         {
             isGround = true;
             animator.SetBool("Jump", false);
         }
     }
 
+    // Event handler input
+    private void OnMove(InputAction.CallbackContext context)
+    {
+        moveInput = context.ReadValue<Vector2>();
+    }
 
+    private void OnMoveCanceled(InputAction.CallbackContext context)
+    {
+        moveInput = Vector2.zero;
+    }
+
+    private void OnJump(InputAction.CallbackContext context)
+    {
+        if (isGround)
+        {
+            Jump();
+            animator.SetBool("Jump", true);
+            isGround = false;
+        }
+    }
+
+    // UI Mobile Support
+    public void OnJumpButton()
+    {
+        if (isGround)
+        {
+            Jump();
+            animator.SetBool("Jump", true);
+            isGround = false;
+        }
+    }
+
+    public void OnAttack1Button()
+    {
+        animator.SetTrigger("Attack_1");
+    }
+
+    public void OnAttack2Button()
+    {
+        animator.SetTrigger("Attack_2");
+    }
+
+    public void OnMoveLeftButtonDown()
+    {
+        moveInput.x = -1f;
+    }
+
+    public void OnMoveRightButtonDown()
+    {
+        moveInput.x = 1f;
+    }
+
+    public void OnMoveButtonUp()
+    {
+        moveInput.x = 0f;
+    }
 }
