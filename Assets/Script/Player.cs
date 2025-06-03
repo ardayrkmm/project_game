@@ -7,6 +7,7 @@ public class Player : MonoBehaviour
 {
     public Animator animator;
     public Rigidbody2D rb;
+    public int MaxHealt = 3;
 
     private float jumpHeight = 8f;
     private float moveSpeed = 5f;
@@ -43,6 +44,11 @@ public class Player : MonoBehaviour
     void Update()
     {
         // Flip karakter
+
+        if (MaxHealt <= 0)
+        {
+            Die();
+        }
         if (moveInput.x < 0f && facingRight)
         {
             transform.eulerAngles = new Vector3(0f, -180f, 0f);
@@ -146,5 +152,20 @@ public class Player : MonoBehaviour
     public void OnMoveButtonUp()
     {
         moveInput.x = 0f;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if(
+            MaxHealt <= 0)
+        {
+            return;
+        }
+        MaxHealt -= damage;
+    }
+
+    void Die()
+    {
+        Debug.Log("Player mati");
     }
 }
