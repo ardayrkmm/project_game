@@ -144,9 +144,22 @@ public class Player : MonoBehaviour
         moveInput.x = -1f;
     }
 
+    // Lepas tombol kiri
+    public void OnMoveLeftButtonUp()
+    {
+        moveInput.x = 0f;
+    }
+
+    // Tekan tombol kanan
     public void OnMoveRightButtonDown()
     {
         moveInput.x = 1f;
+    }
+
+    // Lepas tombol kanan
+    public void OnMoveRightButtonUp()
+    {
+        moveInput.x = 0f;
     }
 
     public void OnMoveButtonUp()
