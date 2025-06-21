@@ -1,21 +1,39 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
+
 using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
     public Animator animator;
     public Rigidbody2D rb;
-    public int MaxHealt = 3;
-
+    public int maxHealth = 100;
+    public int currentHealth;
+    public TMP_Text darah;
+    public Slider healthSlider;
+    public int totalNpcKilled = 0;  
+    public int requiredNpcKills = 10;  
     private float jumpHeight = 8f;
     private float moveSpeed = 5f;
     private bool facingRight = true;
     private bool isGround = true;
     private Vector2 moveInput;
+    // Dialog variables
+    public GameObject dialogPanel;  // Panel dialog
+    public TMP_Text dialogText;     // Tempat teks dialog muncul
+    public string[] dialogLines;    // Baris dialog
+    private int currentLine = 0;    // Indeks baris dialog yang ditampilkan
+    private bool isDialogActive = false;    // Menyimpan status dialog aktif atau tidak
 
     private PlayerController inputActions;
+    void Start()
+    {
+        currentHealth = maxHealth; // Set nilai currentHealth sama dengan maxHealth
+    }
+
 
     private void OnEnable()
     {
@@ -45,10 +63,16 @@ public class Player : MonoBehaviour
     {
         // Flip karakter
 
-        if (MaxHealt <= 0)
+
+        if (currentHealth <= 0)
         {
-            Die();
+            
+                Die(); // Panggil animasi mati
+            
         }
+        darah.text = currentHealth.ToString();
+
+
         if (moveInput.x < 0f && facingRight)
         {
             transform.eulerAngles = new Vector3(0f, -180f, 0f);
@@ -76,6 +100,12 @@ public class Player : MonoBehaviour
         {
             animator.SetTrigger("Attack_3");
         }
+
+        // Jika tombol dialog ditekan (contoh: tombol E untuk keyboard)
+        if (Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            TriggerDialog();
+        }
     }
 
     private void FixedUpdate()
@@ -83,6 +113,12 @@ public class Player : MonoBehaviour
         transform.position += new Vector3(moveInput.x, 0f, 0f) * Time.fixedDeltaTime * moveSpeed;
     }
 
+    public void EndDialog()
+    {
+        dialogPanel.SetActive(false); // Menyembunyikan panel dialog setelah selesai
+        isDialogActive = false;
+        currentLine = 0;
+    }
     void Jump()
     {
         rb.AddForce(new Vector2(0f, jumpHeight), ForceMode2D.Impulse);
@@ -101,6 +137,36 @@ public class Player : MonoBehaviour
     private void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
+    }
+    public void OnTriggerDialogButton()
+    {
+        TriggerDialog();
+    }
+
+    public void TriggerDialog()
+    {
+        if (dialogLines != null && dialogLines.Length > 0)  // Pastikan ada dialog yang diatur
+        {
+            if (!isDialogActive)
+            {
+                dialogText.text = dialogLines[currentLine];
+                dialogPanel.SetActive(true); // Menampilkan panel dialog
+                isDialogActive = true;
+            }
+            else
+            {
+                // Lanjutkan dialog ke baris berikutnya
+                currentLine++;
+                if (currentLine < dialogLines.Length)
+                {
+                    dialogText.text = dialogLines[currentLine];
+                }
+                else
+                {
+                    EndDialog();
+                }
+            }
+        }
     }
 
     private void OnMoveCanceled(InputAction.CallbackContext context)
@@ -169,16 +235,43 @@ public class Player : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if(
-            MaxHealt <= 0)
+        Debug.Log($"Damage diterima: {damage}. Kesehatan sebelum: {currentHealth}");
+
+        if (currentHealth <= 0)
         {
-            return;
+            return;  // Jika darah sudah habis, tidak ada damage yang akan diterima
         }
-        MaxHealt -= damage;
+
+        currentHealth -= damage;
+
+        Debug.Log($"Kesehatan setelah damage: {currentHealth}");
+
+        // Update UI health
+        if (healthSlider != null)
+        {
+            healthSlider.value = currentHealth;
+        }
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
     }
 
     void Die()
     {
         Debug.Log("Player mati");
+
+        // Trigger animasi mati
+        
     }
+    IEnumerator WaitAndDisable()
+    {
+        // Tunggu selama durasi animasi mati (misalnya 3 detik, sesuaikan dengan durasi animasi)
+        yield return new WaitForSeconds(3f);
+
+        // Setelah animasi selesai, matikan objek player
+        gameObject.SetActive(false);
+    }
+
 }
