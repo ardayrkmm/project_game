@@ -13,7 +13,7 @@ public class TouchingDirection : MonoBehaviour
     RaycastHit2D[] groundHits = new RaycastHit2D[5];
     RaycastHit2D[] wallHits = new RaycastHit2D[5];
     RaycastHit2D[] cellingHits = new RaycastHit2D[5];
-    public float GroundDIstance = 0.05f;
+    public float GroundDIstance = 0.1f;
 
     Animator animator;
 

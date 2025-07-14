@@ -2,12 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
+
 public class DamageAble : MonoBehaviour
 {
     // Start is called before the first frame update
 
     public UnityEvent<int, Vector2> damagebleHit;
-
+    public UnityEvent<int, int> healthChanged;
 
     [SerializeField]
     private int _maxHealth = 100;
@@ -35,6 +37,20 @@ public class DamageAble : MonoBehaviour
         animator = GetComponent<Animator> ();
     }
 
+    public bool LockVelocity
+    {
+        get
+        {
+            return animator.GetBool(AnimationString.lockVelocity);
+        }
+        set
+        {
+            animator.SetBool(AnimationString.lockVelocity, value);
+        }
+
+    }
+    public Image[] heartImages;
+
     public int Health
     {
         get
@@ -44,12 +60,21 @@ public class DamageAble : MonoBehaviour
         set
         {
             _health = value;
+            healthChanged.Invoke (_health, MaxHealth);
             if(_health <= 0)
             {
                 IsAlive = false;
+             
             }
+            
         }
     }
+    private void DisableEnemy()
+    {
+        // Menonaktifkan objek musuh ketika kesehatan 0
+        gameObject.SetActive(false);
+    }
+
     [SerializeField]
     private bool _isAlive = true;
 
@@ -99,11 +124,25 @@ public class DamageAble : MonoBehaviour
         {
             Health -= Damage;
             isInvicible = true;
+         
             animator.SetTrigger(AnimationString.hitTrigger);
+            LockVelocity = true;
             damagebleHit.Invoke(Damage, Knock);
             return true;
         }
 
         return false;
+    }
+    private void UpdateHealthBar()
+    {
+        int heartsToShow = Mathf.CeilToInt((float)_health / _maxHealth * heartImages.Length);
+
+        for (int i = 0; i < heartImages.Length; i++)
+        {
+            if (i < heartsToShow)
+                heartImages[i].enabled = true;  // Menampilkan gambar hati
+            else
+                heartImages[i].enabled = false; // Menyembunyikan gambar hati
+        }
     }
 }
